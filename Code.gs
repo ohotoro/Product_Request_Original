@@ -1,13 +1,60 @@
 // ===== 전역 설정 Code.gs ===== 
 
 const CONFIG = {
-  PRODUCT_SHEET_ID: '1fhU41XoZQyu0QlVgwQe3zIbWg-CdULl7UMNeLYQLS5E',
-  ORDER_SHEET_ID: '1eTIFbWZupx4BhX-PUmgXBNCx-l0BEsLG7GinlCGTNSA',
-  PRODUCT_SHEET_NAME: '상품목록',
-  CATEGORY_SHEET_NAME: 'category',
-  MAX_SEARCH_RESULTS: 100,
-  CACHE_DURATION: 3600, // 1시간
-  FREQUENT_ITEMS_COUNT: 1000
+    // 스프레드시트 ID
+    PRODUCT_SHEET_ID: '1fhU41XoZQyu0QlVgwQe3zIbWg-CdULl7UMNeLYQLS5E',
+    ORDER_SHEET_ID: '1eTIFbWZupx4BhX-PUmgXBNCx-l0BEsLG7GinlCGTNSA',
+
+    // 시트 이름
+    PRODUCT_SHEET_NAME: '상품목록',
+    CATEGORY_SHEET_NAME: 'category',
+    SEARCH_INDEX_NAME: '검색인덱스',
+
+    // 검색 및 캐시 설정
+    MAX_SEARCH_RESULTS: 100,
+    CACHE_DURATION: 3600, // 1시간
+    FREQUENT_ITEMS_COUNT: 1000,
+
+    // 발주 설정
+    DEFAULT_MONTHLY_BUDGET: 10000000,
+    LOW_STOCK_THRESHOLD: 10,
+
+    // Smaregi API 설정 (Phase 2에서 사용 예정)
+    SMAREGI: {
+        CONTRACT_ID: 'skuv592u8',
+        ACCESS_TOKEN: '78a128116eda101dac5eeb3bb0546c28',
+        API_BASE_URL: 'https://webapi.smaregi.jp/access/',
+        TIMEOUT: 30000
+    },
+
+    // Smaregi プラットフォームAPI 설정
+    PLATFORM_CONFIG: {
+        // 개발환경용 계약ID
+        DEV_CONTRACT_ID: 'sb_skx951h6',
+
+        // 본번환경용 계약ID
+        PROD_CONTRACT_ID: 'skuv592u8',
+
+        // 開発環境
+        DEV_CLIENT_ID: '5436f7f654c4efa5d2a1f56355c5bca1',
+        DEV_CLIENT_SECRET: '531546d78dc35216c63531cf66c85f04ecc472f31ef70d3ea85ce7ae3c1c0724',
+
+        // 本番環境
+        PROD_CLIENT_ID: 'add65344a30e3d0b0893fe972702a7b4',
+        PROD_CLIENT_SECRET: 'e0ba58828a61ec832facf93bb8c6b40d80085c56f6c191b83a496c2cc97b61cd', // ← 설정 완료!
+
+        // 환경 선택 - 본번환경으로 변경!
+        USE_PRODUCTION: true, // ← true로 변경!
+
+        // API 엔드포인트
+        DEV_TOKEN_URL: 'https://id.smaregi.dev/app/',
+        PROD_TOKEN_URL: 'https://id.smaregi.jp/app/',
+        DEV_API_BASE_URL: 'https://api.smaregi.dev/',
+        PROD_API_BASE_URL: 'https://api.smaregi.jp/',
+
+        // 권한 스코프
+        SCOPES: 'pos.stores:read pos.products:read pos.stock:read pos.transactions:read'
+    }
 };
 
 // ===== 웹앱 진입점 =====
