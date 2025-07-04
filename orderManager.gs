@@ -10,28 +10,46 @@ function updateItemStockStatus(orderId, itemId, stockStatus) {
       return { success: false, message: '발주서를 찾을 수 없습니다.' };
     }
     
-    // 데이터 범위 한 번에 가져오기
     const lastRow = sheet.getLastRow();
     if (lastRow < 7) {
       return { success: false, message: '발주 항목이 없습니다.' };
     }
     
-    const dataRange = sheet.getRange(7, 1, lastRow - 6, 13);
+    // Q열(17열)까지 읽기
+    const dataRange = sheet.getRange(7, 1, lastRow - 6, 17);
     const values = dataRange.getValues();
     
-    // itemId 파싱 (timestamp_barcode 형식 가정)
     const [timestamp, barcode] = itemId.split('_');
     
-    // 해당 항목 찾기
     for (let i = 0; i < values.length; i++) {
       if (matchesItem(values[i], itemId, barcode)) {
-        // 재고 상태 업데이트
-        values[i][11] = stockStatus; // L열: 재고가능여부
+        // 재고 상태 정규화
+        let normalizedStatus = stockStatus;
+        if (!isNaN(stockStatus) && stockStatus !== '' && stockStatus !== '미확인') {
+          normalizedStatus = `${stockStatus}개만 가능`;
+        }
         
-        // 변경사항 저장
+        values[i][11] = normalizedStatus; // L열: 재고가능여부
+        
+        // Q열 재계산
+        const requestedQty = Number(values[i][3]) || 0; // D열: 요청수량
+        let exportableQty = requestedQty;
+        
+        if (normalizedStatus === '품절') {
+          exportableQty = 0;
+        } else if (normalizedStatus === '오더중') {
+          exportableQty = 0;
+        } else if (normalizedStatus.includes('개만 가능')) {
+          const match = normalizedStatus.match(/(\d+)개만 가능/);
+          if (match) {
+            const availableQty = parseInt(match[1]);
+            exportableQty = Math.min(availableQty, requestedQty);
+          }
+        }
+        
+        values[i][16] = exportableQty; // Q열: 출고가능수량
+        
         dataRange.setValues(values);
-        
-        // 메타데이터 업데이트
         updateOrderMetadata(sheet, 'stockCheck');
         
         return { 
