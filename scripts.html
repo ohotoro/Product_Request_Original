@@ -2887,182 +2887,30 @@ function saveStockStatus() {
     return;
   }
   
-  let stockStatus = '';
-  
-  if (selectedStatus.value === 'custom') {
-    const customValue = document.getElementById('custom-status').value.trim();
-    if (!customValue) {
-      showError('재고 상태를 입력해주세요.');
-      return;
-    }
-    
-    // 숫자만 입력된 경우 자동으로 "X개만 가능" 형식으로 변환
-    if (!isNaN(customValue) && customValue !== '') {
-      stockStatus = `${customValue}개만 가능`;
-    } else {
-      stockStatus = customValue;
-    }
-  } else {
-    stockStatus = selectedStatus.value === 'available' ? '가능' :
-                 selectedStatus.value === 'soldout' ? '품절' : '오더중';
-  }
-  
-  // 로컬 상태 업데이트
-  AppState.currentStockEditItem.stockAvailable = stockStatus;
-  AppState.currentStockEditItem.manualStock = true;
-  
-  // UI 업데이트
-  updateOrderItem(AppState.currentStockEditItem.id);
-  
-  // 서버 업데이트
-  google.script.run
-    .withSuccessHandler(function(result) {
-      if (result.success) {
-        showQuickSuccess('재고 상태가 업데이트되었습니다.');
-        scheduleAutoSave();
-      } else {
-        showError('업데이트 실패: ' + result.message);
-      }
-    })
-    .withFailureHandler(function(error) {
-      showError('서버 오류: ' + error);
-    })
-    .updateItemStockStatus(
-      AppState.currentOrderInfo.orderId, 
-      AppState.currentStockEditItem.id, 
-      stockStatus
-    );
-  
-  closeModal('stock-status-modal');
-}
-
-function updateQuickStockStatus(itemId, status) {
-  const item = AppState.orderItems.find(i => i.id == itemId);
-  if (!item) return;
-  
-  let stockStatus = '';
-  
-  switch(status) {
-    case 'available':
-      stockStatus = '가능';
-      break;
-    case 'soldout':
-      stockStatus = '품절';
-      break;
-    case 'ordering':
-      stockStatus = '오더중';
-      break;
-    case 'partial':
-      const qty = prompt('가능한 수량을 입력하세요:', '');
-      if (qty === null) return;
-      
-      // 숫자만 입력된 경우 자동으로 형식 변환
-      if (!isNaN(qty) && qty !== '') {
-        stockStatus = `${qty}개만 가능`;
-      } else if (qty.trim() !== '') {
-        stockStatus = qty;
-      } else {
+  let newStatus = '';
+  switch(selectedStatus.value) {
+    case 'available': newStatus = '가능'; break;
+    case 'soldout': newStatus = '품절'; break;
+    case 'ordering': newStatus = '오더중'; break;
+    case 'custom':
+      newStatus = document.getElementById('custom-status').value.trim();
+      if (!newStatus) {
+        showError('상태를 입력해주세요.');
         return;
       }
       break;
   }
   
-  // 로컬 상태 업데이트
-  item.stockAvailable = stockStatus;
-  item.manualStock = true;
-  
-  // UI 업데이트
-  updateOrderItem(itemId);
-  
-  // Quick 메뉴 닫기
-  document.querySelectorAll('.quick-stock-menu').forEach(menu => {
-    menu.classList.remove('show');
-  });
-  
-  // 서버 업데이트
-  google.script.run
-    .withSuccessHandler(function(result) {
-      if (result.success) {
-        showQuickSuccess('재고 상태가 업데이트되었습니다.');
-        scheduleAutoSave();
-      }
-    })
-    .updateItemStockStatus(
-      AppState.currentOrderInfo.orderId, 
-      itemId, 
-      stockStatus
-    );
-}
-
-function saveBulkStockEdit() {
-  const selectedItems = document.querySelectorAll('.bulk-item-checkbox:checked');
-  if (selectedItems.length === 0) {
-    showError('선택된 항목이 없습니다.');
-    return;
-  }
-  
-  const stockStatus = document.querySelector('input[name="bulkStockStatus"]:checked')?.value;
-  if (!stockStatus) {
-    showError('재고 상태를 선택해주세요.');
-    return;
-  }
-  
-  let finalStatus = '';
-  
-  if (stockStatus === 'custom') {
-    const customValue = document.getElementById('bulk-custom-status').value.trim();
-    if (!customValue) {
-      showError('재고 상태를 입력해주세요.');
-      return;
-    }
-    
-    // 숫자만 입력된 경우 자동으로 형식 변환
-    if (!isNaN(customValue) && customValue !== '') {
-      finalStatus = `${customValue}개만 가능`;
-    } else {
-      finalStatus = customValue;
-    }
-  } else {
-    finalStatus = stockStatus === 'available' ? '가능' :
-                 stockStatus === 'soldout' ? '품절' : '오더중';
-  }
-  
-  const updates = [];
-  selectedItems.forEach(checkbox => {
-    const itemId = checkbox.value;
-    const item = AppState.orderItems.find(i => i.id === itemId);
-    if (item) {
-      item.stockAvailable = finalStatus;
-      item.manualStock = true;
-      updates.push({
-        barcode: item.barcode,
-        stockStatus: finalStatus
-      });
-    }
-  });
-  
-  // UI 즉시 업데이트
+  AppState.currentStockEditItem.stockAvailable = newStatus;
   updateOrderList();
-  closeModal('bulk-stock-edit-modal');
   
-  // 서버에 업데이트
-  showLoading('재고 상태 업데이트 중...');
+  if (AppState.currentOrderInfo) {
+    scheduleAutoSave();
+  }
   
-  google.script.run
-    .withSuccessHandler(function(result) {
-      hideLoading();
-      if (result.success) {
-        showQuickSuccess(result.message);
-        scheduleAutoSave();
-      } else {
-        showError('업데이트 실패: ' + result.message);
-      }
-    })
-    .withFailureHandler(function(error) {
-      hideLoading();
-      showError('서버 오류: ' + error);
-    })
-    .updateBulkStockStatus(AppState.currentOrderInfo.orderId, updates);
+  AppState.currentStockEditItem = null;
+  closeModal('stock-status-modal');
+  showQuickSuccess('재고 상태가 업데이트되었습니다.');
 }
 
 function getStockStatusDisplay(status, stockData) {
@@ -3254,25 +3102,19 @@ function saveDraft(showMessage = true) {
   
   showSaveIndicator('saving');
   
-  // saveDraftOrder로 변경
   google.script.run
     .withSuccessHandler(function(result) {
       showSaveIndicator('saved');
-      if (result && result.success) {
-        if (showMessage) showQuickSuccess(result.message || '임시 저장되었습니다.');
-      } else if (!result) {
-        showSaveIndicator('hide');
-        if (showMessage) showError('서버 응답이 없습니다.');
-      } else if (!result.success) {
-        showSaveIndicator('hide');
-        if (showMessage) showError(result.message || '임시 저장 실패');
+      if (result.success && showMessage) {
+        showQuickSuccess(`${result.savedCount}개 항목이 저장되었습니다.`);
       }
+      AppState.hasUnsavedChanges = false;
     })
     .withFailureHandler(function(error) {
       showSaveIndicator('hide');
-      if (showMessage) showError('임시 저장 실패: ' + error);
+      if (showMessage) showError('저장 실패: ' + error);
     })
-    .saveDraftOrder(AppState.orderItems); // 함수 변경
+    .saveToOrderSheetWithVersion(AppState.orderItems)
 }
 
 function clearOrders() {
