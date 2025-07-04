@@ -2311,11 +2311,6 @@ function saveToOrderSheetWithVersion(items) {
       const data = items.map(item => {
         let stockAvailable = item.stockAvailable || '미확인';
         
-        // 숫자만 있는 경우 "X개만 가능" 형식으로 변환
-        if (!isNaN(stockAvailable) && stockAvailable !== '' && stockAvailable !== '미확인') {
-          stockAvailable = `${stockAvailable}개만 가능`;
-        }
-        
         // 출고가능수량 계산
         let exportableQty = item.quantity; // 기본값은 요청수량
         
@@ -2345,7 +2340,7 @@ function saveToOrderSheetWithVersion(items) {
           item.comment || '',               // I열
           item.status || '대기',            // J열
           item.confirmedAt || '',           // K열
-          stockAvailable,                   // L열: 재고가능여부 (정규화된 값)
+          stockAvailable,                   // L열: 재고가능여부
           item.supplierName || '',          // M열
           item.exportedAt || '',            // N열: 내보내기 시간
           item.csvConfirmed ? '✓' : '',    // O열: CSV 확인 여부
@@ -2371,7 +2366,7 @@ function saveToOrderSheetWithVersion(items) {
     sheet.getRange(5, 5).setValue('수정시간:').setFontWeight('bold');
     sheet.getRange(5, 6).setValue(new Date());
     
-    // 헤더 업데이트 - Q열 헤더명 확인
+    // 헤더 업데이트 - Q열 헤더명 변경
     const headers = sheet.getRange(6, 1, 1, 17).getValues()[0];
     if (headers[13] !== '내보내기시간') {
       sheet.getRange(6, 14).setValue('내보내기시간');
@@ -2382,7 +2377,7 @@ function saveToOrderSheetWithVersion(items) {
     if (headers[15] !== '박스번호') {
       sheet.getRange(6, 16).setValue('박스번호');
     }
-    if (headers[16] !== '출고가능수량') {
+    if (headers[16] !== '출고가능수량') { // 헤더명 변경
       sheet.getRange(6, 17).setValue('출고가능수량');
     }
     
@@ -3533,4 +3528,3 @@ function resetAllBoxNumbers(orderId) {
     };
   }
 }
-
